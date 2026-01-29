@@ -53,7 +53,7 @@ pipeline {
         }
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                dir('java-maven-sonar-argocd-helm-k8s'){
+                dir("${env.WORKSPACE}") {
                 sh '''
                     pwd
                     ls -la
