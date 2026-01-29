@@ -54,6 +54,7 @@ pipeline {
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
                 sh '''
+                    cd /var/lib/jenkins/workspace/ci-cd-pipeline/java-maven-sonar-argocd-helm-k8s
                     git config user.email "mdghulamsaklain@gmail.com"
                     git config user.name "MdSaklain01"
                     BUILD_NUMBER=${BUILD_NUMBER}
