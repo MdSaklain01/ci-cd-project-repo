@@ -54,28 +54,42 @@ pipeline {
         }
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-              
-                    sh '''
+                sh '''
+                    # 1. Fix permissions and sync with remote
                     git config --global --add safe.directory "$WORKSPACE"
-                    git init
-                    git checkout main || git checkout -b main
+                    git fetch origin main
+                    git checkout main
+                    git reset --hard origin/main  # This is the most important line
+                    
+                    # 2. Configure Identity
                     git config user.email "mdghulamsaklain@gmail.com"
                     git config user.name "MdSaklain01"
-                    BUILD_NUMBER=${BUILD_NUMBER}
-                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                     
+                    # 3. Use a smarter SED that replaces the tag even if it is a number
+                    # This regex looks for 'image: saklain786/ultimate-cicd:' and replaces whatever follows it
+                    FILE_PATH="java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml"
+                    sed -i "s|image: saklain786/ultimate-cicd:.*|image: saklain786/ultimate-cicd:${BUILD_NUMBER}|g" $FILE_PATH
+                    
+                    # 4. Commit and Push
+                    git add $FILE_PATH
+                    
+                    # Only commit if there is a change (prevents exit code 1)
+                    if git diff --quiet HEAD --; then
+                        echo "No changes to commit"
+                    else
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                    fi
                 '''
             }
         }
-
-
-
     }
-  }
-}
+
+
+
+    
+  
+
               
                     
                       
