@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
         
-      image 'saklain786/jenkins-docker-agent:v3'
+      image 'abhishekf5/maven-abhishek-docker-agent:v1'
       args '--user root --network=host -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
     }
   }
@@ -20,7 +20,7 @@ pipeline {
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
-     stage('Static Code Analysis') {
+    /* stage('Static Code Analysis') {
        environment {
          SONAR_URL = "http://localhost:9000"
        }
@@ -30,6 +30,7 @@ pipeline {
          }
        }
      }
+    */
     stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "saklain786/ultimate-cicd:${BUILD_NUMBER}"
@@ -53,10 +54,9 @@ pipeline {
         }
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                dir("${env.WORKSPACE}") {
-                sh '''
-                    pwd
-                    ls -la
+              
+                    sh '''
+
                     git config user.email "mdghulamsaklain@gmail.com"
                     git config user.name "MdSaklain01"
                     BUILD_NUMBER=${BUILD_NUMBER}
@@ -67,9 +67,11 @@ pipeline {
                 '''
             }
         }
-}
+
 
 
     }
   }
 }
+                    
+                    
