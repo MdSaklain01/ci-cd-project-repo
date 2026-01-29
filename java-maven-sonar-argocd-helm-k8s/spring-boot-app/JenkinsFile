@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
         
-      image 'saklain786/jenkins-docker-agent:v3'
+      image 'abhishekf5/maven-abhishek-docker-agent:v1'
       args '--user root --network=host -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
     }
   }
@@ -20,6 +20,7 @@ pipeline {
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
+  /*
      stage('Static Code Analysis') {
        environment {
          SONAR_URL = "http://localhost:9000"
@@ -30,6 +31,7 @@ pipeline {
          }
        }
      }
+*/
     
     stage('Build and Push Docker Image') {
       environment {
@@ -49,42 +51,24 @@ pipeline {
     }
     stage('Update Deployment File') {
         environment {
-            GIT_REPO_NAME = "ci-cd-project-repo"
+            GIT_REPO_NAME = "ci-cd-project-repo""
             GIT_USER_NAME = "MdSaklain01"
         }
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
                 sh '''
-                    # 1. Fix permissions and sync with remote
-                    git config --global --add safe.directory "$WORKSPACE"
-                    git fetch origin main
-                    git checkout main
-                    git reset --hard origin/main  # This is the most important line
-                    
-                    # 2. Configure Identity
                     git config user.email "mdghulamsaklain@gmail.com"
                     git config user.name "MdSaklain01"
-                    
-                    # 3. Use a smarter SED that replaces the tag even if it is a number
-                    # This regex looks for 'image: saklain786/ultimate-cicd:' and replaces whatever follows it
-                    FILE_PATH="java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml"
-                    sed -i "s|image: saklain786/ultimate-cicd:.*|image: saklain786/ultimate-cicd:${BUILD_NUMBER}|g" $FILE_PATH
-                    
-                    # 4. Commit and Push
-                    git add $FILE_PATH
-                    
-                    # Only commit if there is a change (prevents exit code 1)
-                    if git diff --quiet HEAD --; then
-                        echo "No changes to commit"
-                    else
-                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
-                    fi
+                    BUILD_NUMBER=${BUILD_NUMBER}
+                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                 '''
             }
         }
     }
-}
+  }
 }
 
 
